@@ -36,3 +36,12 @@
 - name: Copy the init.d script
   template: src=jira.j2 dest=/etc/init.d/jira mode=0755
   when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+  
+- name: ensure iptables allows established and related traffic
+  lineinfile:
+    dest=/etc/sysconfig/iptables
+    state=present 
+    regexp="^-A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT" 
+    insertafter="^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT" 
+    backup=yes
+  notify: restart iptables
