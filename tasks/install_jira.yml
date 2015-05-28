@@ -34,5 +34,5 @@
   when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 7
 
 - name: Copy the init.d script
-  template: src=jira.js dest=/etc/init.d/jira
+  template: src=jira.j2 dest=/etc/init.d/jira
   when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
