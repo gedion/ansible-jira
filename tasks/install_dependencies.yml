@@ -7,3 +7,10 @@
   yum: name={{ item }} state=installed
   with_items:
    - java-1.7.0-openjdk-devel
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: Dependencies for JIRA
+  apt: name={{ item }} state=installed
+  with_items:
+   - openjdk-7-jdk
+  when: ansible_distribution == 'Debian'

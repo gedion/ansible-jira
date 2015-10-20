@@ -8,7 +8,7 @@
   group: name={{ jira_user_group }} gid={{ jira_user_group_gid }}
 
 - name: Default JIRA user and home
-  user: name={{ jira_user }} shell=/bin/bash group={{ jira_user_group }} uid={{ jira_user_uid }} home={{ jira_user_home_dir }}
+  user: name={{ jira_user }} shell=/bin/bash group={{ jira_user_group }} uid={{ jira_user_uid }} home={{ jira_user_home_dir }} createhome=yes
 
 - name: Download the Source
   get_url: url={{ jira_download_link }}-{{ jira_version }}.tar.gz sha256sum={{ jira_version_file_sha256sum }} dest={{ jira_user_home_dir }}/atlassian-jira-{{ jira_version }}.tar.gz
@@ -16,7 +16,7 @@
 - stat: path={{ jira_user_home_dir }}/atlassian-jira-{{ jira_version }}-standalone
   register: st
 
-- name: Extrat the sources
+- name: Extract the sources
   unarchive: src={{ jira_user_home_dir }}/atlassian-jira-{{ jira_version }}.tar.gz dest={{ jira_user_home_dir }} copy=no
   when: not st.stat.exists
 
@@ -24,7 +24,10 @@
   file: src={{ jira_user_home_dir }}/atlassian-jira-{{ jira_version }}-standalone dest={{ jira_user_home_dir }}/jira owner={{ jira_user }} group={{ jira_user_group }} state=link
 
 - name: Create jira-home dir
-  file: path={{ jira_home }} state=directory owner={{ jira_user }} group={{ jira_user_group }} 
+  file: path={{ jira_home }} state=directory owner={{ jira_user }} group={{ jira_user_group }}  recurse=yes
+
+- name: Set good rights to jira-home dir
+  command: chown -R {{ jira_user }}:{{ jira_user_group }} {{ jira_user_home_dir }}
 
 - name: Set the home dir inside the configs
   template: src=jira-application.properties.j2 dest={{ jira_user_home_dir }}/jira/atlassian-jira/WEB-INF/classes/jira-application.properties owner={{ jira_user }} group={{ jira_user_group }} mode=0644
@@ -36,12 +39,22 @@
 - name: Copy the init.d script
   template: src=jira.j2 dest=/etc/init.d/jira mode=0755
   when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
-  
+ 
+- name: Copy the service script for debian
+  template: src=jira.service.debian.j2 dest=/etc/init.d/jira mode=0755
+  when: ansible_os_family == "Debian"
+
+ 
 - name: ensure iptables allows established and related traffic
   lineinfile:
     dest=/etc/sysconfig/iptables
     state=present 
     regexp="^-A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT" 
+    line="-A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT" 
     insertafter="^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT" 
     backup=yes
   notify: restart iptables
+  when: ansible_os_family == "RedHat"
+
+- name: start jira
+  service: name=jira state=started enabled=yes
