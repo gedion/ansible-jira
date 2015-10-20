@@ -55,7 +55,7 @@ source ./hacking/env-setup
 
 ## 4. Usage
 
-1. `git clone http://github.com/fauzigo/ansible-jira` or `ansible-galaxy install fauzigo.jira`
+1. `git clone http://github.com/samyscoub/ansible-jira` or `ansible-galaxy install samyscoub.jira`
 2. create a vars file in you group_vars dir or host_vars or simply add them directory on your main yml file
 3. run the Ansible playbook, the fastest way is:
 
